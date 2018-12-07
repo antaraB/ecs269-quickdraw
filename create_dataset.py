@@ -126,7 +126,8 @@ def convert_data(trainingdata_dir,
                                                          output_shards)))
 
   reading_order = list(range(len(file_handles))) * observations_per_class
-  random.shuffle(reading_order)
+  if offset==0:
+    random.shuffle(reading_order)
 
   for c in reading_order:
     line = file_handles[c].readline()
