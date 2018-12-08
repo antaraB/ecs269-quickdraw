@@ -84,7 +84,7 @@ def convert_data(trainingdata_dir,
                  output_file,
                  classnames,
                  output_shards=10,
-                 offset=0):
+                 offset=0,name=""):
   """Convert training data from ndjson files into tf.Example in tf.Record.
 
   Args:
@@ -125,11 +125,20 @@ def convert_data(trainingdata_dir,
         tf.python_io.TFRecordWriter("%s-%05i-of-%05i" % (output_file, i,
                                                          output_shards)))
 
-  reading_order = list(range(len(file_handles))) * observations_per_class
+  # print(list(range(len(file_handles))),observations_per_class)
+  reading_order = list()
+  for value in range(len(file_handles)):
+    reading_order.extend([value]*observations_per_class)
+  # reading_order = list(range(len(file_handles))) * observations_per_class
+  print("Reading order for {} is {}".format(name,reading_order[:10]))
   if offset==0:
+    print("Shuffling {} with {} instances".format(name,len(reading_order)))
     random.shuffle(reading_order)
+  else :
+    print("Not shuffling {} with {} instances".format(name,len(reading_order)))
+  print("First 10 elements {}".format(reading_order[:10]))
 
-  for c in reading_order:
+  for idx,c in enumerate(reading_order):
     line = file_handles[c].readline()
     ink = None
     while ink is None:
@@ -148,6 +157,8 @@ def convert_data(trainingdata_dir,
     f = tf.train.Features(feature=features)
     example = tf.train.Example(features=f)
     writers[_pick_output_shard()].write(example.SerializeToString())
+
+  print ("For {}: class indices: {}".format(name, classnames))
 
   # Close all files
   for w in writers:
@@ -169,14 +180,14 @@ def main(argv):
       os.path.join(FLAGS.output_path, "training.tfrecord"),
       classnames=[],
       output_shards=FLAGS.output_shards,
-      offset=0)
+      offset=0, name="train")
   convert_data(
       FLAGS.ndjson_path,
       FLAGS.eval_observations_per_class,
       os.path.join(FLAGS.output_path, "eval.tfrecord"),
       classnames=classnames,
       output_shards=FLAGS.output_shards,
-      offset=FLAGS.train_observations_per_class)
+      offset=FLAGS.train_observations_per_class,name="eval")
 
 
 if __name__ == "__main__":
