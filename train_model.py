@@ -35,13 +35,14 @@ import functools
 import sys
 
 import tensorflow as tf
-
+tf.logging.set_verbosity(tf.logging.INFO)
 
 def get_num_classes():
   classes = []
   with tf.gfile.GFile(FLAGS.classes_file, "r") as f:
     classes = [x for x in f]
   num_classes = len(classes)
+  print("Number of classes are : {}".format(num_classes))
   return num_classes
 
 
@@ -220,6 +221,7 @@ def model_fn(features, labels, mode, params):
     """Adds a fully connected layer."""
     return tf.layers.dense(final_state, params.num_classes)
 
+  
   # Build the model.
   inks, lengths, labels = _get_input_tensors(features, labels)
   convolved, lengths = _add_conv_layers(inks, lengths)
@@ -240,12 +242,17 @@ def model_fn(features, labels, mode, params):
       summaries=["learning_rate", "loss", "gradients", "gradient_norm"])
   # Compute current predictions.
   predictions = tf.argmax(logits, axis=1)
+
+  # Adding logging here
+  logging_hook = tf.train.LoggingTensorHook({"loss" : loss, 
+    "accuracy" : tf.metrics.accuracy(labels, predictions)}, every_n_iter=10)
   return tf.estimator.EstimatorSpec(
       mode=mode,
       predictions={"logits": logits, "predictions": predictions},
       loss=cross_entropy,
       train_op=train_op,
-      eval_metric_ops={"accuracy": tf.metrics.accuracy(labels, predictions)})
+      eval_metric_ops={"accuracy": tf.metrics.accuracy(labels, predictions)},
+      training_hooks = [logging_hook])
 
 
 def create_estimator_and_specs(run_config):
@@ -287,6 +294,7 @@ def main(unused_args):
           model_dir=FLAGS.model_dir,
           save_checkpoints_secs=300,
           save_summary_steps=100))
+  print("#### Created estimator ####")
   tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
