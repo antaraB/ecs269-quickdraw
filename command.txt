@@ -1,0 +1,3 @@
+python train_model.py --training_data=input_dataset_TF_Records/dataset_TF_500T_100E_unshuffled/training.tfrecord-?????-of-????? --eval_data=
+input_dataset_TF_Records/dataset_TF_500T_100E_unshuffled/eval.tfrecord-?????-of-????? --classes_file=input_dataset_TF_Records/dataset_TF_500T_100E_unshuffled/training.tfr
+ecord.classes --steps=10000 --model_dir=output_500T_100E_20cat_unshuffled_eval/ &>> output_unshuffled_eval.txt

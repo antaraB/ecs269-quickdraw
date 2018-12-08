@@ -35,7 +35,7 @@ import functools
 import sys
 
 import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.INFO)
+#tf.logging.set_verbosity(tf.logging.INFO)
 
 def get_num_classes():
   classes = []
@@ -244,15 +244,14 @@ def model_fn(features, labels, mode, params):
   predictions = tf.argmax(logits, axis=1)
 
   # Adding logging here
-  logging_hook = tf.train.LoggingTensorHook({"loss" : loss, 
-    "accuracy" : tf.metrics.accuracy(labels, predictions)}, every_n_iter=10)
+#  logging_hook = tf.train.LoggingTensorHook({ "accuracy" : tf.metrics.accuracy(labels, predictions)}, every_n_iter=10)
   return tf.estimator.EstimatorSpec(
       mode=mode,
       predictions={"logits": logits, "predictions": predictions},
       loss=cross_entropy,
       train_op=train_op,
-      eval_metric_ops={"accuracy": tf.metrics.accuracy(labels, predictions)},
-      training_hooks = [logging_hook])
+      eval_metric_ops={"accuracy": tf.metrics.accuracy(labels, predictions)})
+ #     training_hooks = [logging_hook])
 
 
 def create_estimator_and_specs(run_config):
@@ -283,7 +282,8 @@ def create_estimator_and_specs(run_config):
   eval_spec = tf.estimator.EvalSpec(input_fn=get_input_fn(
       mode=tf.estimator.ModeKeys.EVAL,
       tfrecord_pattern=FLAGS.eval_data,
-      batch_size=FLAGS.batch_size))
+      batch_size=FLAGS.batch_size),
+      steps=None)
 
   return estimator, train_spec, eval_spec
 
