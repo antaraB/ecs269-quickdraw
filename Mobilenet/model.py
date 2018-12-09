@@ -1,16 +1,15 @@
-from tensorflow import keras
 import keras
 from keras.applications import MobileNet
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.models import Sequential, Model
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')           # noqa: E402
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import tensorflow as tf
+#import matplotlib
+#matplotlib.use('Agg')           # noqa: E402
+#import matplotlib.pyplot as plt
+#import matplotlib.gridspec as gridspec
+#import tensorflow as tf
 import h5py
 
 f1 = h5py.File('data/x_test.h5', 'r')
@@ -50,8 +49,9 @@ test_images = test_images.astype('float32') / 255.0
 
 
 from keras.utils import to_categorical
-encoded_y_train = to_categorical(train_labels, num_classes=20, dtype='float32')
-encoded_y_test = to_categorical(test_labels, num_classes=20, dtype='float32')
+#encoded_y_train = to_categorical(train_labels, num_classes=20, dtype='float32')
+encoded_y_train = to_categorical(train_labels, num_classes=20)
+encoded_y_test = to_categorical(test_labels, num_classes=20)
 
 target_size = 128
 from skimage.transform import resize
@@ -122,21 +122,21 @@ model1.compile(optimizer=Adam(),
               metrics=['categorical_accuracy'])
 
 
-train_generator = load_data_generator(train_images, encoded_y_train, batch_size=64)
+train_generator = load_data_generator(train_images, encoded_y_train, batch_size=8)
 
 print(train_images.shape)
 print(train_labels.shape)
 
 model1.fit_generator(
     generator=train_generator,
-    steps_per_epoch=157,
+    steps_per_epoch=1250,
     verbose=1,
-    epochs=8)
+    epochs=5)
 
 
-test_generator = load_data_generator(test_images, encoded_y_test, batch_size=64)
+test_generator = load_data_generator(test_images, encoded_y_test, batch_size=8)
 test_loss, test_acc = model1.evaluate_generator(generator=test_generator,
-                         steps=900,
+                         steps=200,
                          verbose=1)
 
 print('Test accuracy:', test_acc)
