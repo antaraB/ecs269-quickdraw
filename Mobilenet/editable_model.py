@@ -23,7 +23,8 @@ from sklearn.utils import shuffle
 #STEP 1 : Create a classification model with accuracy of above 90%
 #import the fashion mnist data
 
-path = 'data_10perclass'
+#path = 'data_10perclass'
+path ='data'
 f1 = h5py.File(path+'/x_test.h5', 'r')
 f2 = h5py.File(path+'/x_train.h5', 'r')
 f3 = h5py.File(path+'/y_test.h5', 'r')
@@ -47,16 +48,11 @@ print(train_images.shape)
 print("test_images")
 print(test_images.shape)
 
-																																																		
-#fashion_mnist = keras.datasets.fashion_mnist
-
-#Seperating Data
-#(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
 print("train_images", train_images.shape)
-train_images = np.reshape(train_images, (200,28,28))
+train_images = np.reshape(train_images, (10000,28,28))
 
-test_images = np.reshape(test_images, (100,28,28))
+test_images = np.reshape(test_images, (2000,28,28))
 
 print("train_images", train_images.shape)
 
@@ -65,9 +61,11 @@ train_images = train_images.astype('float32') / 255.0
 test_images = test_images.astype('float32') / 255.0
 
 
-encoded_y_train = to_categorical(train_labels, num_classes=20, dtype='float32')
-encoded_y_test = to_categorical(test_labels, num_classes=20, dtype='float32')
+#encoded_y_train = to_categorical(train_labels, num_classes=20, dtype='float32')
+#encoded_y_test = to_categorical(test_labels, num_classes=20, dtype='float32')
 
+encoded_y_train = to_categorical(train_labels, num_classes=20)
+encoded_y_test = to_categorical(test_labels, num_classes=20)
 target_size = 224
 
 
@@ -85,7 +83,7 @@ def preprocess_image(x):
     return x.astype(np.float32)
 
 
-def load_data_generator(x, y, batch_size=64):
+def load_data_generator(x, y, batch_size=20):
     num_samples = x.shape[0]
     while 1:  # Loop forever so the generator never terminates
         try:
@@ -219,24 +217,24 @@ model1.compile(optimizer=Adam(),
               metrics=['categorical_accuracy'])
 
 
-train_generator = load_data_generator(train_images, encoded_y_train, batch_size=8)
+train_generator = load_data_generator(train_images, encoded_y_train, batch_size=20)
 
 print(train_images.shape)
 print(train_labels.shape)
 
 model1.fit_generator(
     generator=train_generator,
-    steps_per_epoch=25,
+    steps_per_epoch=500,
     verbose=1,
-    epochs=2)
+    epochs=5)
 
 test_generator = load_data_generator(test_images, encoded_y_test, batch_size=8)
 test_loss, test_acc = model1.evaluate_generator(generator=test_generator,
-                         steps=25,
+                         steps=125,
                          verbose=1)
 
 print('Test accuracy:', test_acc)
 
-model_name = "tf_serving_keras_mobilenetv2"
+model_name = "e_500_5_mobilenetv2"
 model1.save("models/{}.h5".format(model_name))
 
