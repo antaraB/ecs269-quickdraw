@@ -1,25 +1,33 @@
-from tensorflow import keras
+# from tensorflow import keras
 import keras
+from keras.applications.mobilenetv2 import MobileNetV2
 from keras.applications import MobileNet
-from keras.layers import Dense, GlobalAveragePooling2D, Convolution2D, BatchNormalization, Activation
+from keras.layers import Input, Dropout, Dense, GlobalAveragePooling2D, Convolution2D, DepthwiseConv2D, BatchNormalization, Activation
 from keras.models import Sequential, Model
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import os
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')           # noqa: E402
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import tensorflow as tf
+# import matplotlib
+# matplotlib.use('Agg')           # noqa: E402
+# import matplotlib.pyplot as plt
+# import matplotlib.gridspec as gridspec
+# import tensorflow as tf
+
+from keras.utils import to_categorical
+from skimage.transform import resize
 import h5py
 
+from keras.optimizers import Adam
+from sklearn.utils import shuffle
+ 
 #STEP 1 : Create a classification model with accuracy of above 90%
 #import the fashion mnist data
 
-f1 = h5py.File('x_test.h5', 'r')
-f2 = h5py.File('x_train.h5', 'r')
-f3 = h5py.File('y_test.h5', 'r')
-f4 = h5py.File('y_train.h5', 'r')
+path = 'data_10perclass'
+f1 = h5py.File(path+'/x_test.h5', 'r')
+f2 = h5py.File(path+'/x_train.h5', 'r')
+f3 = h5py.File(path+'/y_test.h5', 'r')
+f4 = h5py.File(path+'/y_train.h5', 'r')
 
 X1 = f1['name-of-dataset']
 test_images= np.array(X1.value)
@@ -57,12 +65,11 @@ train_images = train_images.astype('float32') / 255.0
 test_images = test_images.astype('float32') / 255.0
 
 
-from keras.utils import to_categorical
 encoded_y_train = to_categorical(train_labels, num_classes=20, dtype='float32')
 encoded_y_test = to_categorical(test_labels, num_classes=20, dtype='float32')
 
 target_size = 224
-from skimage.transform import resize
+
 
 def preprocess_image(x):
     # Resize the image to have the shape of (96,96)
@@ -78,7 +85,6 @@ def preprocess_image(x):
     return x.astype(np.float32)
 
 
-from sklearn.utils import shuffle
 def load_data_generator(x, y, batch_size=64):
     num_samples = x.shape[0]
     while 1:  # Loop forever so the generator never terminates
@@ -93,70 +99,140 @@ def load_data_generator(x, y, batch_size=64):
         except Exception as err:
             print(err)
 
-from keras.applications.mobilenetv2 import MobileNetV2
-from keras.layers import Dense, Input, Dropout
-from keras.models import Model
 
-def build_model( ):
+def build_model(shallow=False ):
     alpha = 1
-    classes = 10
+    classes = 20
     input_tensor = Input(shape=(target_size, target_size, 3))
 
-    # x = Convolution2D(int(32 * alpha), (3, 3), strides=(2, 2), padding='same', use_bias=False)(input_tensor)
-    # x = BatchNormalization()(x)
-    # x = Activation('relu')(x)
+    x = Convolution2D(int(32 * alpha), (3, 3), strides=(2, 2), padding='same', use_bias=False)(input_tensor)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    # x = GlobalAveragePooling2D()(x)
-    # output_tensor = Dense(classes, activation='softmax')(x)
+################2
+    x = DepthwiseConv2D((3, 3), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    base_model = MobileNetV2(
-        include_top=False,
-        weights='imagenet',
-        input_tensor=input_tensor,
-        input_shape=(target_size, target_size, 3),
-        pooling='avg')
+    x = Convolution2D(int(64 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    for layer in base_model.layers:
-        layer.trainable = True  # trainable has to be false in order to freeze the layers
+#######################3
+    x = DepthwiseConv2D((3, 3), strides=(2, 2), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(128 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+##############################4
+    x = DepthwiseConv2D((3, 3), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(128 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+#########################5
+    x = DepthwiseConv2D((3, 3), strides=(2, 2), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(256 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+##########################6
+    x = DepthwiseConv2D((3, 3), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(256 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+######################### 7
+    x = DepthwiseConv2D((3, 3), strides=(2, 2), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Convolution2D(int(512 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+###################### 8
+    if not shallow:
+        for _ in range(5):
+            x = DepthwiseConv2D((3, 3), strides=(1, 1), padding='same', use_bias=False)(x)
+            x = BatchNormalization()(x)
+            x = Activation('relu')(x)
+
+            x = Convolution2D(int(512 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+            x = BatchNormalization()(x)
+            x = Activation('relu')(x)
+#########################9
+    x = DepthwiseConv2D((3, 3), strides=(2, 2), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(1024 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+##################10
+    x = DepthwiseConv2D((3, 3), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(int(1024 * alpha), (1, 1), strides=(1, 1), padding='same', use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+################## 11
+    x = GlobalAveragePooling2D()(x)
+    output_tensor = Dense(classes, activation='softmax')(x)
+    model = Model(inputs=input_tensor, outputs=output_tensor)
+    # base_model = MobileNetV2(
+    #     include_top=False,
+    #     weights='imagenet',
+    #     input_tensor=input_tensor,
+    #     input_shape=(target_size, target_size, 3),
+    #     pooling='avg')
+
+    # for layer in base_model.layers:
+    #     layer.trainable = True  # trainable has to be false in order to freeze the layers
         
-    op = Dense(256, activation='relu')(base_model.output)
-    op = Dropout(.25)(op)
-    
-    # ##
+    # op = Dense(256, activation='relu')(base_model.output)
+    # op = Dropout(.25)(op)
+
     # # softmax: calculates a probability for every possible class.
     # #
     # # activation='softmax': return the highest probability;
     # # for example, if 'Coat' is the highest probability then the result would be 
     # # something like [0,0,0,0,1,0,0,0,0,0] with 1 in index 5 indicate 'Coat' in our case.
     # ##
-    output_tensor = Dense(20, activation='softmax')(op)
+    # output_tensor = Dense(20, activation='softmax')(op)
 
-    model = Model(inputs=input_tensor, outputs=output_tensor)
+
 
     return model
 
 model1 = build_model()
 
-from keras.optimizers import Adam
 model1.compile(optimizer=Adam(),
               loss='categorical_crossentropy',
               metrics=['categorical_accuracy'])
 
 
-train_generator = load_data_generator(train_images, encoded_y_train, batch_size=64)
+train_generator = load_data_generator(train_images, encoded_y_train, batch_size=8)
 
 print(train_images.shape)
 print(train_labels.shape)
 
 model1.fit_generator(
     generator=train_generator,
-    steps_per_epoch=5,
+    steps_per_epoch=25,
     verbose=1,
-    epochs=5)
+    epochs=2)
 
-test_generator = load_data_generator(test_images, encoded_y_test, batch_size=64)
+test_generator = load_data_generator(test_images, encoded_y_test, batch_size=8)
 test_loss, test_acc = model1.evaluate_generator(generator=test_generator,
-                         steps=900,
+                         steps=25,
                          verbose=1)
 
 print('Test accuracy:', test_acc)
